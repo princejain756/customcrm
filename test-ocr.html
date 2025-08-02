@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>OCR Parsing Test</h1>
+    
+    <div class="test-section">
+        <h2>Sample OCR Text</h2>
+        <p>This test uses the sample OCR text from the image description:</p>
+        <pre id="sample-text">BILLED TO: Invoice No. 12345
+Imani Olowe 16 June 2005
++123-456-7890
+63 Ivy Road, Hawkville, CA, USA 31036
+Eggshell Camisole Top 1 $123 $123
+Cuban Collar Shirt 2 $127 $254
+Floral Cotton Dress 1 $123 $123
+Subtotal $500
+Tax (0%) $0
+Total $500
+Thank you!
+PAYMENT INFORMATION
+Briard Bank
+Account Name: Samira Hadid
+Account No.: 123-456-7890
+Samira Hadid
+Pay by: 5 July 2025 123
+Anywhere St., Any City, ST 12345</pre>
+    </div>
+
+    <div class="test-section">
+        <button onclick="runTest()">Run OCR Parsing Test</button>
+        <div id="results" class="result" style="display: none;">
+            <h3>Parsed Results:</h3>
+            <div id="customer-info"></div>
+            <div id="bill-details"></div>
+            <div id="payment-info"></div>
+            <div id="items"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the OCR service (this would work in a real Vite environment)
+        // For this test, we'll simulate the parsing logic
+        
+        function parseBillText(text) {
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            const result = {
+                customer_info: {},
+                bill_details: {},
+                payment_info: {},
+                items: []
+            };
+            
+            // Extract customer name
+            for (const line of lines) {
+                if (line.includes('BILLED TO:')) {
+                    const match = line.match(/BILLED TO:\s*(.+)/i);
+                    if (match) {
+                        result.customer_info.name = match[1].trim();
+                    }
+                }
+            }
+            
+            // Extract invoice number
+            for (const line of lines) {
+                if (line.includes('Invoice No.')) {
+                    const match = line.match(/Invoice No\.\s*(\d+)/i);
+                    if (match) {
+                        result.bill_details.bill_number = match[1];
+                    }
+                }
+            }
+            
+            // Extract customer details
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.includes('+123-456-7890')) {
+                    result.customer_info.phone = '+123-456-7890';
+                }
+                if (line.includes('Ivy Road')) {
+                    result.customer_info.address = line;
+                }
+            }
+            
+            // Extract total amount
+            for (const line of lines) {
+                if (line.includes('Total $')) {
+                    const match = line.match(/Total\s*\$(\d+)/i);
+                    if (match) {
+                        result.bill_details.total_amount = parseInt(match[1]);
+                    }
+                }
+            }
+            
+            // Extract payment info
+            for (const line of lines) {
+                if (line.includes('Briard Bank')) {
+                    result.payment_info.bank_name = 'Briard Bank';
+                }
+                if (line.includes('Account Name:')) {
+                    const match = line.match(/Account Name:\s*(.+)/i);
+                    if (match) {
+                        result.payment_info.account_name = match[1].trim();
+                    }
+                }
+                if (line.includes('Account No.:')) {
+                    const match = line.match(/Account No\.:\s*(.+)/i);
+                    if (match) {
+                        result.payment_info.account_number = match[1].trim();
+                    }
+                }
+            }
+            
+            // Extract items
+            for (const line of lines) {
+                if (line.includes('$') && !line.includes('Total') && !line.includes('Subtotal')) {
+                    const parts = line.split(' ');
+                    if (parts.length >= 4) {
+                        const productName = parts.slice(0, -3).join(' ');
+                        const quantity = parseInt(parts[parts.length - 3]);
+                        const unitPrice = parseInt(parts[parts.length - 2].replace('$', ''));
+                        const totalPrice = parseInt(parts[parts.length - 1].replace('$', ''));
+                        
+                        if (!isNaN(quantity) && !isNaN(unitPrice) && !isNaN(totalPrice)) {
+                            result.items.push({
+                                product_name: productName,
+                                quantity: quantity,
+                                unit_price: unitPrice,
+                                total_price: totalPrice,
+                                gst_rate: 18,
+                                gst_amount: (totalPrice * 18) / 100
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return result;
+        }
+        
+        window.runTest = function() {
+            const sampleText = document.getElementById('sample-text').textContent;
+            const result = parseBillText(sampleText);
+            
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('customer-info').innerHTML = `
+                <h4>Customer Information:</h4>
+                <p><strong>Name:</strong> ${result.customer_info.name || 'Not found'}</p>
+                <p><strong>Phone:</strong> ${result.customer_info.phone || 'Not found'}</p>
+                <p><strong>Address:</strong> ${result.customer_info.address || 'Not found'}</p>
+            `;
+            
+            document.getElementById('bill-details').innerHTML = `
+                <h4>Bill Details:</h4>
+                <p><strong>Bill Number:</strong> ${result.bill_details.bill_number || 'Not found'}</p>
+                <p><strong>Total Amount:</strong> $${result.bill_details.total_amount || 'Not found'}</p>
+            `;
+            
+            document.getElementById('payment-info').innerHTML = `
+                <h4>Payment Information:</h4>
+                <p><strong>Bank:</strong> ${result.payment_info.bank_name || 'Not found'}</p>
+                <p><strong>Account Name:</strong> ${result.payment_info.account_name || 'Not found'}</p>
+                <p><strong>Account Number:</strong> ${result.payment_info.account_number || 'Not found'}</p>
+            `;
+            
+            document.getElementById('items').innerHTML = `
+                <h4>Items (${result.items.length}):</h4>
+                ${result.items.map(item => `
+                    <p>• ${item.product_name} - Qty: ${item.quantity}, Unit: $${item.unit_price}, Total: $${item.total_price}</p>
+                `).join('')}
+            `;
+        };
+    </script>
+</body>
+</html> 

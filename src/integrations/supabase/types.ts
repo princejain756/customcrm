@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      bill_items: {
+        Row: {
+          created_at: string
+          gst_amount: number
+          gst_rate: number
+          id: string
+          product_name: string
+          quantity: number
+          scanned_bill_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          gst_amount?: number
+          gst_rate?: number
+          id?: string
+          product_name: string
+          quantity?: number
+          scanned_bill_id: string
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          gst_amount?: number
+          gst_rate?: number
+          id?: string
+          product_name?: string
+          quantity?: number
+          scanned_bill_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_items_scanned_bill_id_fkey"
+            columns: ["scanned_bill_id"]
+            isOneToOne: false
+            referencedRelation: "scanned_bills"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       lead_logs: {
         Row: {
           created_at: string
@@ -374,6 +418,50 @@ export type Database = {
             referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      scanned_bills: {
+        Row: {
+          bill_date: string
+          bill_number: string
+          created_at: string
+          gst_amount: number
+          id: string
+          items: Json | null
+          lead_id: string
+          scanned_image_url: string | null
+          total_amount: number
+        }
+        Insert: {
+          bill_date: string
+          bill_number: string
+          created_at?: string
+          gst_amount?: number
+          id?: string
+          items?: Json | null
+          lead_id: string
+          scanned_image_url?: string | null
+          total_amount?: number
+        }
+        Update: {
+          bill_date?: string
+          bill_number?: string
+          created_at?: string
+          gst_amount?: number
+          id?: string
+          items?: Json | null
+          lead_id?: string
+          scanned_image_url?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanned_bills_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          }
         ]
       }
       subscription_types: {
