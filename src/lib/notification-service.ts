@@ -279,7 +279,6 @@ class NotificationService {
     if (this.settings.desktop && 'Notification' in window && Notification.permission === 'granted') {
       new Notification(title, {
         body: message,
-        icon: '/favicon.ico',
         tag: 'scanbill-notification'
       });
     }
