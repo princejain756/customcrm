@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { notificationService } from '@/lib/notification-service';
+import { apiClient } from '@/lib/api-client';
 import { 
   User, 
   Phone, 
@@ -16,10 +17,13 @@ import {
   Calendar,
   Save,
   Plus,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const LeadCreation: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,58 +38,93 @@ const LeadCreation: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (formData.phone && !/^[\+]?[\d\s\-\(\)]{10,}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // TODO: Implement actual lead creation API call
       console.log('Creating lead:', formData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Add real notification for lead creation
-      notificationService.addRealNotification(
-        'Lead Created Successfully',
-        `New lead "${formData.name}" has been added to your CRM system.`,
-        'success'
-      );
-      
-      // Reset form after successful submission
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        position: '',
-        address: '',
-        source: '',
-        status: 'new',
-        priority: 'medium',
-        notes: ''
+      // Call the API to create the lead
+      const response = await apiClient.createLead({
+        name: formData.name,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        company: formData.company || undefined,
+        position: formData.position || undefined,
+        address: formData.address || undefined,
+        source: formData.source || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        notes: formData.notes || undefined
       });
       
-      alert('Lead created successfully!');
+      if (response.success && response.data) {
+        // Add success notification
+        notificationService.addRealNotification(
+          'Lead Created Successfully',
+          `New lead "${formData.name}" (${response.data.lead_number}) has been added to your AutoCRM system.`,
+          'success'
+        );
+        
+        console.log('✅ Lead created successfully:', response.data);
+        
+        // Navigate back to leads list or dashboard
+        navigate('/');
+      } else {
+        throw new Error(response.error || 'Failed to create lead');
+      }
     } catch (error) {
-      console.error('Error creating lead:', error);
+      console.error('❌ Error creating lead:', error);
       
       // Add error notification
       notificationService.addRealNotification(
         'Lead Creation Failed',
-        'There was an error creating the lead. Please try again.',
+        error instanceof Error ? error.message : 'There was an error creating the lead. Please try again.',
         'error'
       );
-      
-      alert('Error creating lead. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -114,9 +153,20 @@ const LeadCreation: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Create New Lead</h2>
-          <p className="text-muted-foreground">Add a new lead to your CRM system</p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold">Create New Lead</h2>
+            <p className="text-muted-foreground">Add a new lead to your AutoCRM system</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge className={getStatusColor(formData.status)}>
@@ -147,7 +197,9 @@ const LeadCreation: React.FC = () => {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter full name"
                   required
+                  className={errors.name ? 'border-red-500' : ''}
                 />
+                {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
@@ -157,7 +209,9 @@ const LeadCreation: React.FC = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="Enter email address"
+                  className={errors.email ? 'border-red-500' : ''}
                 />
+                {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
@@ -166,7 +220,9 @@ const LeadCreation: React.FC = () => {
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter phone number"
+                  className={errors.phone ? 'border-red-500' : ''}
                 />
+                {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Company</Label>
@@ -270,10 +326,15 @@ const LeadCreation: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => window.history.back()}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate('/')}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !formData.name.trim()}>
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

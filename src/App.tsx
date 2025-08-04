@@ -7,6 +7,9 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import LeadCreation from './components/LeadCreation';
+import LeadsList from './components/LeadsList';
+import OrderCreation from './components/OrderCreation';
 import apiClient from './lib/api-client';
 import './i18n'; // Initialize i18n
 import './App.css';
@@ -109,6 +112,42 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-lead"
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+                  <div className="max-w-4xl mx-auto">
+                    <LeadCreation />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+                  <div className="max-w-7xl mx-auto">
+                    <LeadsList />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-order"
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+                  <div className="max-w-7xl mx-auto">
+                    <OrderCreation />
+                  </div>
+                </div>
               </ProtectedRoute>
             }
           />

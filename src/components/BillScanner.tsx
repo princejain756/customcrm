@@ -538,7 +538,7 @@ const BillScanner = ({ leadId, lead, organisation, onBillScanned, onClose }: Bil
                 {scannedImage ? (
                   <div className="space-y-4">
                     <img 
-                      src={scannedImage} 
+                      src={'D:/CUSTOM CRM/scanbill-to-tally/public/logo'} 
                       alt="Scanned bill" 
                       className="max-w-full h-48 lg:h-64 object-contain mx-auto"
                     />

@@ -395,7 +395,7 @@ const InvoiceManager = ({ leadId, lead, organisation, onClose }: InvoiceManagerP
             </div>
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={invoicePreviewUrl}
+                src={invoicePreviewUrl || 'D:/CUSTOM CRM/scanbill-to-tally/public/logo'}
                 className="w-full h-full border-0"
                 title="Invoice Preview"
               />
